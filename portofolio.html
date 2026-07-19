@@ -1,0 +1,758 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Farhan Saputra Pratama — Web Developer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #030407;
+    --bg-soft: #05070c;
+    --panel: rgba(255,255,255,0.045);
+    --panel-strong: rgba(255,255,255,0.07);
+    --border: rgba(255,255,255,0.09);
+    --text: #eef1f6;
+    --text-dim: #8b93a7;
+    --accent-a: #2dd4bf;
+    --accent-b: #06b6d4;
+    --grad: linear-gradient(120deg, var(--accent-a), var(--accent-b));
+    --mono: 'JetBrains Mono', monospace;
+    --display: 'Space Grotesk', sans-serif;
+    --body: 'Inter', sans-serif;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--body);
+    overflow-x: hidden;
+    line-height: 1.6;
+  }
+  body.locked{ overflow:hidden; height:100vh; }
+
+  #bg-canvas{
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    background:
+      radial-gradient(ellipse at 20% 10%, rgba(45,212,191,0.12), transparent 55%),
+      radial-gradient(ellipse at 85% 30%, rgba(45,212,191,0.10), transparent 50%),
+      var(--bg);
+  }
+
+  .wrap{ position:relative; z-index:2; max-width: 1080px; margin: 0 auto; padding: 0 28px; }
+
+  /* Menu garis tiga pojok kanan atas */
+  .menu-wrap{ position: fixed; top: 22px; right: 28px; z-index: 40; }
+  .menu-btn{
+    width: 44px; height: 44px; border-radius: 50%;
+    background: rgba(8,10,16,0.55); border: 1px solid var(--border);
+    backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:5px;
+    cursor:pointer; transition: border-color .2s ease, background .2s ease;
+  }
+  .menu-btn:hover{ border-color: rgba(255,255,255,0.22); background: rgba(8,10,16,0.75); }
+  .menu-btn span{ width: 18px; height: 2px; background: var(--text); border-radius: 2px; transition: transform .3s ease, opacity .3s ease; }
+  .menu-btn.open span:nth-child(1){ transform: translateY(7px) rotate(45deg); }
+  .menu-btn.open span:nth-child(2){ opacity: 0; }
+  .menu-btn.open span:nth-child(3){ transform: translateY(-7px) rotate(-45deg); }
+  .menu-dropdown{
+    position:absolute; top: 54px; right: 0; min-width: 190px;
+    background: rgba(8,10,16,0.9); border: 1px solid var(--border); border-radius: 14px;
+    backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+    padding: 10px; display:flex; flex-direction:column; gap:2px;
+    opacity:0; visibility:hidden; transform: translateY(-8px);
+    transition: opacity .25s ease, transform .25s ease, visibility .25s ease;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+  }
+  .menu-dropdown.open{ opacity:1; visibility:visible; transform: translateY(0); }
+  .menu-dropdown a{
+    color: var(--text-dim); text-decoration:none; font-size: 13.5px;
+    padding: 9px 12px; border-radius: 8px; transition: background .2s ease, color .2s ease;
+  }
+  .menu-dropdown a:hover{ background: rgba(255,255,255,0.06); color: var(--text); }
+  @media (max-width:560px){ .menu-wrap{ top:16px; right:16px; } .menu-btn{ width:40px; height:40px; } }
+
+  /* Label nama pojok kiri atas */
+  .hero-name{
+    font-family: var(--display); font-weight:700; font-size: clamp(28px, 4.2vw, 44px);
+    line-height: 1.1; letter-spacing:-0.01em;
+    background: linear-gradient(120deg,#fff 40%, var(--accent-a) 100%);
+    -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color: transparent;
+    margin: 16px 0 20px;
+  }
+
+  /* ---------- Verification gate ---------- */
+  #gate{
+    position: fixed; inset:0; z-index: 50;
+    display:flex; align-items:center; justify-content:center;
+    background: rgba(2,3,6,0.72);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    padding: 20px;
+    transition: opacity .6s ease, visibility .6s ease;
+  }
+  #gate.hidden{ opacity:0; visibility:hidden; pointer-events:none; }
+  .console{
+    width: 100%; max-width: 460px;
+    background: rgba(8,10,16,0.85);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    box-shadow: 0 30px 80px rgba(0,0,0,0.55), 0 0 0 1px rgba(255,255,255,0.02) inset;
+    overflow: hidden;
+  }
+  .console-bar{
+    display:flex; align-items:center; gap:8px;
+    padding: 12px 16px;
+    background: rgba(255,255,255,0.03);
+    border-bottom: 1px solid var(--border);
+  }
+  .dot{ width:10px; height:10px; border-radius:50%; }
+  .dot.r{background:#ff5f56;} .dot.y{background:#ffbd2e;} .dot.g{background:#27c93f;}
+  .console-label{
+    margin-left: 8px; font-family: var(--mono); font-size: 12px; color: var(--text-dim);
+  }
+  .console-body{ padding: 28px 26px 26px; }
+  .console-step{ display:none; }
+  .console-step.active{ display:block; animation: fadein .45s ease; }
+  @keyframes fadein{ from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:translateY(0);} }
+  .prompt-line{
+    font-family: var(--mono); font-size: 12.5px; color: var(--accent-a); margin-bottom: 10px;
+  }
+  .prompt-line::before{ content:"> "; color: var(--text-dim); }
+  .console-text{
+    font-family: var(--display); font-size: 18px; font-weight: 500;
+    color: var(--text); line-height:1.5; margin-bottom: 20px;
+  }
+  .console-text b{ color: var(--accent-a); font-weight:600; }
+  #nameInput{
+    width:100%; padding: 13px 14px; border-radius: 9px;
+    background: rgba(255,255,255,0.05); border: 1px solid var(--border);
+    color: var(--text); font-family: var(--body); font-size: 14.5px;
+    outline: none; transition: border-color .2s ease, background .2s ease;
+  }
+  #nameInput:focus{ border-color: var(--accent-a); background: rgba(255,255,255,0.07); }
+  #nameInput::placeholder{ color: #5a6072; }
+  .cursor-blink{
+    display:inline-block; width:7px; height:16px; background: var(--accent-a);
+    margin-left:4px; vertical-align:-2px; animation: blink 1s steps(1) infinite;
+  }
+  @keyframes blink{ 50%{opacity:0;} }
+  .btn{
+    display:inline-flex; align-items:center; justify-content:center; gap:8px;
+    margin-top: 18px; width:100%;
+    padding: 13px 18px; border-radius: 9px; border: none; cursor:pointer;
+    font-family: var(--body); font-weight:600; font-size:14.5px;
+    background: var(--grad); color:#04131a;
+    transition: transform .18s ease, box-shadow .18s ease, opacity .18s ease;
+  }
+  .btn:hover{ transform: translateY(-1px); box-shadow: 0 8px 24px rgba(45,212,191,0.22); }
+  .btn:disabled{ opacity:.4; cursor:not-allowed; transform:none; box-shadow:none; }
+  .btn.ghost{
+    background: transparent; color: var(--text); border: 1px solid var(--border);
+    margin-top: 22px;
+  }
+  .btn.ghost:hover{ border-color: var(--accent-a); box-shadow:none; }
+
+  /* ---------- Layout / sections ---------- */
+  main{ position:relative; z-index:2; }
+  .eyebrow{
+    font-family: var(--mono); font-size: 12.5px; color: var(--accent-a);
+    letter-spacing: .04em; margin-bottom: 14px; display:flex; align-items:center; gap:10px;
+  }
+  .eyebrow::after{ content:""; height:1px; flex:1; background: linear-gradient(90deg, var(--border), transparent); }
+
+  section{ padding: 110px 0; border-top: 1px solid rgba(255,255,255,0.06); }
+  section:first-of-type{ border-top:none; }
+  #about{ padding-top: 10px; border-top: none; }
+  #skills{ padding-top: 30px; border-top: none; }
+  #certificate{ padding-top: 30px; }
+
+  /* Hero */
+  .hero{ min-height: auto; display:flex; align-items:center; padding-top: 130px; padding-bottom: 20px; }
+  .hero-grid{
+    display:grid; grid-template-columns: 1fr 240px; gap: 50px; align-items:center; width:100%;
+  }
+  .hero-kicker{ font-family: var(--mono); color: var(--text-dim); font-size: 13.5px; margin-bottom:18px; }
+  .hero-kicker span{ color: var(--accent-a); }
+  .hero-role{
+    display:inline-flex; align-items:center; gap:8px;
+    font-family: var(--mono); font-size:12.5px; color: var(--accent-a);
+    padding: 7px 12px; border:1px solid var(--border); border-radius: 100px;
+    background: var(--panel);
+  }
+  .hero-role .pulse{
+    width:7px; height:7px; border-radius:50%; background: var(--accent-a);
+    box-shadow: 0 0 0 0 rgba(45,212,191,0.5); animation: pulse 2s infinite;
+  }
+  @keyframes pulse{
+    0%{box-shadow:0 0 0 0 rgba(45,212,191,0.45);}
+    70%{box-shadow:0 0 0 8px rgba(45,212,191,0);}
+    100%{box-shadow:0 0 0 0 rgba(45,212,191,0);}
+  }
+  .photo-frame{
+    position:relative; width:100%; aspect-ratio: 1/1; border-radius: 20px; overflow:hidden;
+    border: 1px solid var(--border); background: var(--panel);
+    box-shadow: 0 30px 70px rgba(0,0,0,0.45);
+  }
+  .photo-frame img{ width:100%; height:100%; object-fit:cover; display:block; }
+  .photo-frame::after{
+    content:""; position:absolute; inset:0; border-radius:20px;
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,0.06);
+    background: linear-gradient(200deg, transparent 60%, rgba(45,212,191,0.12));
+  }
+
+  /* Fade up reveal */
+  .reveal{ opacity:0; transform: translateY(22px); transition: opacity .7s ease, transform .7s ease; }
+  .reveal.show{ opacity:1; transform: translateY(0); }
+
+  /* About / socials */
+  .about-frame{
+    border: 1px solid var(--border); border-radius: 20px;
+    background: var(--panel); padding: 38px 40px; margin-bottom: 30px;
+  }
+  .about-text{ color: var(--text-dim); font-size: 16px; max-width: 700px; margin: 0; }
+  .socials{ display:flex; flex-wrap:wrap; gap:14px; }
+  .social-card{
+    display:flex; align-items:center; gap:12px;
+    padding: 12px 16px; border-radius: 12px;
+    background: var(--panel); border: 1px solid var(--border);
+    text-decoration:none; color: var(--text);
+    transition: transform .2s ease, border-color .2s ease, background .2s ease;
+  }
+  .social-card:hover{ transform: translateY(-3px); border-color: rgba(255,255,255,0.2); background: var(--panel-strong); }
+  .social-icon{
+    width:38px; height:38px; border-radius:10px; display:flex; align-items:center; justify-content:center; flex-shrink:0;
+  }
+  .social-meta .label{ font-size:11px; color: var(--text-dim); font-family: var(--mono); }
+  .social-meta .value{ font-size:14px; font-weight:600; }
+
+  /* Skills */
+  .skills-head{ display:flex; align-items:flex-end; justify-content:space-between; gap:20px; margin-bottom: 34px; flex-wrap:wrap; }
+  .skills-title{ font-family: var(--display); font-size: clamp(24px,3vw,32px); font-weight:600; }
+  .skills-nav{ display:flex; gap:10px; }
+  .skills-nav button{
+    width:40px; height:40px; border-radius:50%; border:1px solid var(--border);
+    background: var(--panel); color: var(--text); cursor:pointer; font-size:16px;
+    display:flex; align-items:center; justify-content:center;
+    transition: border-color .2s ease, background .2s ease;
+  }
+  .skills-nav button:hover{ border-color: var(--accent-a); background: var(--panel-strong); }
+
+  .skills-track{
+    display:flex; gap:26px; overflow-x:auto; scroll-snap-type:x mandatory;
+    padding: 6px 6px 26px; cursor:grab; scrollbar-width:none;
+    scroll-behavior: smooth;
+  }
+  .skills-track.dragging{ cursor:grabbing; scroll-snap-type:none; scroll-behavior:auto; }
+  .skills-track::-webkit-scrollbar{ display:none; }
+
+  .skill-card{
+    flex: 0 0 min(560px, 82vw); scroll-snap-align:center;
+    background: var(--panel); border:1px solid var(--border); border-radius:22px;
+    padding: 42px 44px; user-select:none;
+    transition: border-color .3s ease, transform .35s cubic-bezier(.2,.8,.2,1), background .3s ease;
+  }
+  .skill-card:hover{ border-color: rgba(255,255,255,0.2); transform: translateY(-6px); background: var(--panel-strong); }
+  .skill-top{ display:flex; align-items:center; gap:18px; margin-bottom: 26px; }
+  .skill-logo{ width:64px; height:64px; border-radius:16px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .skill-logo svg{ width:34px; height:34px; }
+  .skill-name{ font-family: var(--display); font-weight:700; font-size:26px; }
+  .skill-pct-row{ display:flex; justify-content:space-between; align-items:baseline; margin-bottom:10px; }
+  .skill-pct-label{ font-family: var(--mono); font-size:12.5px; color: var(--text-dim); }
+  .skill-pct-num{ font-family: var(--mono); font-size:19px; color: var(--accent-a); font-weight:500; }
+  .skill-bar{ height:8px; border-radius:100px; background: rgba(255,255,255,0.07); overflow:hidden; margin-bottom:22px; }
+  .skill-bar-fill{ height:100%; width:0%; border-radius:100px; background: var(--grad); transition: width 1.4s cubic-bezier(.2,.8,.2,1); }
+  .skill-desc{ font-size:15px; color: var(--text-dim); line-height:1.65; }
+
+  /* Sertifikat */
+  .cert-track{
+    display:flex; justify-content:center; gap:26px; padding: 6px 6px 26px;
+  }
+  .cert-frame{
+    flex: 0 0 min(640px, 92vw);
+    border: 1px solid var(--border); border-radius: 20px;
+    background: var(--panel); padding: 16px;
+    box-shadow: 0 30px 70px rgba(0,0,0,0.45);
+    transition: transform .3s ease, border-color .3s ease;
+  }
+  .cert-frame:hover{ transform: translateY(-4px); border-color: rgba(255,255,255,0.18); }
+  .cert-frame img{ width:100%; display:block; border-radius: 12px; }
+
+  /* Projects */
+  .projects-grid{ display:grid; grid-template-columns: repeat(3, 1fr); gap:22px; }
+  .project-card{
+    background: var(--panel); border:1px solid var(--border); border-radius:16px; padding: 26px 24px;
+    transition: transform .25s ease, border-color .25s ease;
+  }
+  .project-card:hover{ transform: translateY(-4px); border-color: rgba(255,255,255,0.18); }
+  .project-tag{ font-family: var(--mono); font-size:11.5px; color: var(--accent-a); margin-bottom:12px; display:block; }
+  .project-title{ font-family: var(--display); font-size:19px; font-weight:600; margin-bottom:10px; }
+  .project-desc{ font-size:13.5px; color: var(--text-dim); margin-bottom:14px; }
+  .project-list{ list-style:none; display:flex; flex-direction:column; gap:8px; }
+  .project-list li{ font-size:13px; color: var(--text); display:flex; gap:8px; align-items:flex-start; }
+  .project-list li::before{ content:"—"; color: var(--accent-a); flex-shrink:0; }
+
+  /* Footer */
+  footer{ padding: 60px 0 50px; text-align:center; color: var(--text-dim); font-size:13px; border-top: 1px solid rgba(255,255,255,0.06); }
+  footer b{ color: var(--text); }
+
+  @media (max-width: 860px){
+    .hero-grid{ grid-template-columns: 1fr; }
+    .photo-frame{ max-width: 220px; margin: 0 auto; order:-1; }
+    .projects-grid{ grid-template-columns: 1fr; }
+    section{ padding: 80px 0; }
+  }
+</style>
+</head>
+<body class="locked">
+
+<canvas id="bg-canvas"></canvas>
+
+<div class="menu-wrap">
+  <button class="menu-btn" id="menuBtn" aria-label="Buka menu"><span></span><span></span><span></span></button>
+  <nav class="menu-dropdown" id="menuDropdown">
+    <a href="#about">Tentang Saya</a>
+    <a href="#skills">Skill</a>
+    <a href="#certificate">Sertifikat</a>
+    <a href="#projects">Proyek</a>
+    <a href="#contact">Kontak</a>
+  </nav>
+</div>
+
+<!-- ============ VERIFICATION GATE ============ -->
+<div id="gate">
+  <div class="console">
+    <div class="console-bar">
+      <span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
+      <span class="console-label">akses-portofolio.sh</span>
+    </div>
+    <div class="console-body">
+
+      <div class="console-step active" id="step1">
+        <div class="prompt-line">verifikasi_tahap_1</div>
+        <div class="console-text">Haloo, boleh perkenalkan nama kamu siapa? Agar Developer bisa mengenali dirimu bahwa ini adalah kamu.</div>
+        <input type="text" id="nameInput" placeholder="Tulis namamu di sini..." autocomplete="off">
+        <button class="btn" id="btnLanjut" disabled>Lanjutkan</button>
+      </div>
+
+      <div class="console-step" id="step2">
+        <div class="prompt-line">verifikasi_tahap_2</div>
+        <div class="console-text" id="thanksText"></div>
+        <button class="btn" id="btnMasuk">Apakah kamu siap untuk menjelajahi lebih lanjut?</button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<main>
+  <div class="wrap">
+
+    <!-- ============ HERO ============ -->
+    <section class="hero">
+      <div class="hero-grid">
+        <div>
+          <div class="hero-kicker">// yo, welcome<span> · portofolio digital</span></div>
+          <h1 class="hero-name" id="heroName">Farhan Saputra Pratama</h1>
+          <span class="hero-role"><span class="pulse"></span> Web Developer buat urusan Pembayaran, Verifikasi & Portofolio</span>
+        </div>
+        <div class="photo-frame">
+          <img id="profilePhoto" src="" alt="Foto profil Farhan Saputra Pratama">
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ ABOUT ============ -->
+    <section class="reveal" id="about">
+      <div class="eyebrow">// Kenalan Yuk</div>
+      <div class="about-frame">
+        <p class="about-text" id="aboutText"></p>
+      </div>
+    </section>
+
+    <!-- ============ SKILLS ============ -->
+    <section class="reveal" id="skills">
+      <div class="skills-head">
+        <div>
+          <div class="eyebrow">// Skill dan Kemampuan</div>
+          <div class="skills-title">Skill yang Lagi Diasah</div>
+        </div>
+        <div class="skills-nav">
+          <button id="skillPrev" aria-label="Sebelumnya">‹</button>
+          <button id="skillNext" aria-label="Selanjutnya">›</button>
+        </div>
+      </div>
+      <div class="skills-track" id="skillsTrack"></div>
+    </section>
+
+    <!-- ============ SERTIFIKAT ============ -->
+    <section class="reveal" id="certificate">
+      <div class="eyebrow">// Bukti Usaha</div>
+      <div class="skills-title" style="margin-bottom:26px;">Sertifikat &amp; Penghargaan</div>
+      <div class="cert-track" id="certTrack"></div>
+    </section>
+
+    <!-- ============ PROJECTS ============ -->
+    <section class="reveal" id="projects">
+      <div class="eyebrow">// Fokus Projek</div>
+      <div class="projects-grid" id="projectsWrap"></div>
+    </section>
+
+    <!-- ============ HUBUNGI SAYA ============ -->
+    <section class="reveal" id="contact">
+      <div class="eyebrow">// Gas Kolaborasi</div>
+      <div class="skills-title" style="margin-bottom:26px;">Hubungi Saya untuk Kerja Sama</div>
+      <div class="socials" id="socialsWrap"></div>
+    </section>
+
+  </div>
+
+  <footer>
+    <div class="wrap">© <span id="year"></span> — Dibuat &amp; dirawat oleh <b>Farhan Saputra Pratama</b></div>
+  </footer>
+</main>
+
+<script>
+/* =========================================================
+   KONFIGURASI — ubah bagian ini kapan saja
+   ========================================================= */
+const CONFIG = {
+  // Ganti link ini kapan pun kamu mau mengganti foto profil
+  profilePhoto: "https://files.catbox.moe/tz6yr5.jpg",
+
+  // Ganti/tambah link sertifikat di sini kapan pun kamu mau
+  certificates: [
+    "https://cdn.phototourl.com/free/2026-07-19-05389946-ecc2-4ca0-a165-c9908148330c.png"
+  ],
+
+  name: "Farhan Saputra Pratama",
+
+  bio: "Seorang Mahasiswa dari tingkat SMA dari Sekolah SMA Cahaya Fadilah yang ingin memajukan teknologi lebih canggih dan efisien. Profesi sebagai Web Developer yang berfokus membuat website pembayaran, verifikasi dan portofolio.",
+
+  socials: [
+    { label: "Instagram", value: "@nocthanzs", url: "https://instagram.com/nocthanzs", bg: "linear-gradient(135deg,#f58529,#dd2a7b,#8134af,#515bd4)", icon: "instagram" },
+    { label: "TikTok", value: "@nocthanzs", url: "https://tiktok.com/@nocthanzs", bg: "#010101", icon: "tiktok" },
+    { label: "WhatsApp", value: "082395425133", url: "https://wa.me/082395425133", bg: "#25D366", icon: "whatsapp" }
+  ],
+
+  skills: [
+    { name: "HTML", pct: 80, color: "#E44D26", icon: "html", desc: "Modal paling dasar buat nyusun konten & struktur halaman web — dari teks, gambar, sampai form." },
+    { name: "CSS", pct: 65, color: "#2965F1", icon: "css", desc: "Biar tampilannya nggak polos: ngatur warna, layout, jarak, sampai bikin desain rapi di semua perangkat." },
+    { name: "JSON", pct: 60, color: "#3a3f4b", icon: "json", desc: "Format data ringan yang wajib dikuasai kalau mau ngobrol sama API atau nyimpen konfigurasi." },
+    { name: "JavaScript", pct: 55, color: "#F7DF1E", icon: "js", desc: "Yang bikin website 'hidup' — animasi, validasi form, sampai logika interaktif di browser." },
+    { name: "React", pct: 45, color: "#0d1117", icon: "react", desc: "Library berbasis komponen buat bikin UI yang cepat, rapi, dan gampang dikembangin." },
+    { name: "PHP", pct: 35, color: "#777BB4", icon: "php", desc: "Otak di balik layar: ngurusin backend, autentikasi, sampai koneksi ke database." }
+  ],
+
+  projects: [
+    {
+      tag: "// website pembayaran",
+      title: "Sistem Pembayaran Online",
+      desc: "Website yang menangani transaksi digital dengan aman dan cepat.",
+      points: [
+        "Mendukung berbagai metode: transfer bank, e-wallet, dan QRIS",
+        "Pencatatan riwayat transaksi otomatis & real-time",
+        "Notifikasi status pembayaran (berhasil, tertunda, gagal)",
+        "Fungsi: mempermudah transaksi, mengurangi kesalahan input manual"
+      ]
+    },
+    {
+      tag: "// website verifikasi",
+      title: "Sistem Verifikasi Pengguna",
+      desc: "Website yang memastikan identitas pengguna sebelum mengakses layanan tertentu.",
+      points: [
+        "Verifikasi email, nomor WhatsApp, atau dokumen identitas",
+        "Kode OTP & tautan konfirmasi otomatis",
+        "Deteksi akun ganda atau aktivitas mencurigakan",
+        "Fungsi: menjaga keamanan data & mencegah akun palsu"
+      ]
+    },
+    {
+      tag: "// website portofolio",
+      title: "Website Portofolio Personal",
+      desc: "Website untuk menampilkan profil, keahlian, dan hasil karya secara profesional.",
+      points: [
+        "Menampilkan skill, proyek, dan kontak dalam satu halaman",
+        "Desain interaktif agar mudah dijelajahi",
+        "Fungsi: personal branding & memudahkan klien menilai kemampuan"
+      ]
+    }
+  ]
+};
+
+/* =========================================================
+   ICON SET (inline SVG, ringan tanpa library eksternal)
+   ========================================================= */
+const ICONS = {
+  html: `<svg viewBox="0 0 32 32" width="22" height="22"><path fill="#fff" d="M4 3l2.2 24.6L16 30l9.8-2.4L28 3H4z" opacity="0"/><path fill="#fff" d="M16 6.2H8.3l.5 5.4H16v0H8.9l.5 5.3H16v0h-6.2l.3 3.6L16 22v0l-5.9-1.6-.4-4.2H7l.7 8.1L16 26.3v0l7.7-2 1-11.3H16V9.8h9.1l.2-2.1.2-1.5H16z"/></svg>`,
+  css: `<svg viewBox="0 0 32 32" width="22" height="22"><path fill="#fff" d="M16 6.2H24l-.5 5.4H16v0h6.9l-.5 5.3H16v0h5.2l-.3 3.6L16 22v0l5.9-1.6.4-4.2H25l-.7 8.1L16 26.3v0l-7.7-2-.5-5.6H11l.2 2.8L16 23v0l4.8-1.3.3-3.4H16v0h5.4l.3-2.8H16v0h5.9l.3-3.3H16z"/></svg>`,
+  json: `<svg viewBox="0 0 32 32" width="22" height="22" fill="none" stroke="#F2C230" stroke-width="2.2" stroke-linecap="round"><path d="M11 6c-3 0-3 2-3 5s0 5-3 5c3 0 3 2 3 5s0 5 3 5"/><path d="M21 6c3 0 3 2 3 5s0 5 3 5c-3 0-3 2-3 5s0 5-3 5"/><circle cx="16" cy="16" r="1.3" fill="#F2C230" stroke="none"/></svg>`,
+  js: `<svg viewBox="0 0 32 32" width="22" height="22"><path fill="#111" d="M8 21.5l2.4-1.5c.5.9 1 1.6 2 1.6 1 0 1.7-.4 1.7-1.9v-8.7h3v8.8c0 3.1-1.8 4.5-4.5 4.5-2.4 0-3.8-1.2-4.6-2.8zM19 21.2l2.4-1.4c.6 1 1.4 1.8 2.9 1.8 1.2 0 2-.6 2-1.4 0-1-.8-1.3-2.1-1.9l-.7-.3c-2.1-.9-3.5-2-3.5-4.3 0-2.1 1.6-3.8 4.2-3.8 1.8 0 3.1.6 4.1 2.3l-2.3 1.5c-.5-.9-1-1.2-1.8-1.2s-1.4.5-1.4 1.2c0 .8.5 1.2 1.7 1.7l.7.3c2.5 1.1 3.9 2.1 3.9 4.5 0 2.5-2 3.9-4.6 3.9-2.6 0-4.2-1.2-5-2.9z"/></svg>`,
+  react: `<svg viewBox="0 0 40 40" width="24" height="24"><circle cx="20" cy="20" r="3" fill="#61DAFB"/><g fill="none" stroke="#61DAFB" stroke-width="1.8"><ellipse cx="20" cy="20" rx="16" ry="6.5"/><ellipse cx="20" cy="20" rx="16" ry="6.5" transform="rotate(60 20 20)"/><ellipse cx="20" cy="20" rx="16" ry="6.5" transform="rotate(120 20 20)"/></g></svg>`,
+  php: `<svg viewBox="0 0 60 30" width="30" height="15"><ellipse cx="30" cy="15" rx="29" ry="13" fill="none" stroke="#fff" stroke-width="2"/><text x="30" y="20" font-family="Arial, sans-serif" font-size="13" font-weight="bold" fill="#fff" text-anchor="middle">php</text></svg>`,
+  instagram: `<svg viewBox="0 0 32 32" width="19" height="19" fill="none" stroke="#fff" stroke-width="2"><rect x="4" y="4" width="24" height="24" rx="7"/><circle cx="16" cy="16" r="6"/><circle cx="23" cy="9" r="1.4" fill="#fff" stroke="none"/></svg>`,
+  tiktok: `<svg viewBox="0 0 32 32" width="18" height="18" fill="#fff"><path d="M22 4c.6 3 2.7 5.3 5.7 5.7v4c-2.1 0-4-.6-5.7-1.7v9.4c0 4.7-3.8 8.6-8.6 8.6S4.8 26.1 4.8 21.4 8.6 12.8 13.3 12.8c.5 0 1 .1 1.5.1v4.1c-.5-.2-1-.2-1.5-.2-2.6 0-4.6 2.1-4.6 4.6s2.1 4.6 4.6 4.6 4.7-2 4.7-4.6V4H22z"/></svg>`,
+  whatsapp: `<svg viewBox="0 0 32 32" width="18" height="18" fill="#fff"><path d="M16 4c-6.6 0-12 5.4-12 12 0 2.1.6 4.1 1.6 5.9L4 28l6.3-1.6c1.7.9 3.6 1.4 5.7 1.4 6.6 0 12-5.4 12-12S22.6 4 16 4zm0 21.8c-1.8 0-3.5-.5-5-1.3l-.4-.2-3.7 1 1-3.6-.2-.4c-1-1.6-1.5-3.4-1.5-5.3 0-5.5 4.5-10 10-10s10 4.5 10 10-4.5 9.8-10 9.8z"/><path d="M21.5 18.4c-.3-.2-1.7-.9-2-1s-.5-.2-.7.1-.8 1-1 1.2-.4.3-.7.1c-.3-.2-1.4-.5-2.6-1.6-1-.9-1.6-2-1.8-2.3-.2-.3 0-.5.1-.6.1-.1.3-.4.5-.5.1-.2.2-.3.3-.5.1-.2 0-.4 0-.5-.1-.1-.7-1.7-1-2.3-.2-.6-.5-.5-.7-.5h-.6c-.2 0-.5.1-.8.4-.3.3-1 1-1 2.4s1.1 2.8 1.2 3c.1.2 2.2 3.4 5.4 4.7.8.3 1.4.5 1.8.6.8.2 1.5.2 2 .1.6-.1 1.7-.7 2-1.4.2-.7.2-1.2.2-1.4-.1-.1-.3-.2-.6-.4z"/></svg>`
+};
+
+/* =========================================================
+   ISI KONTEN DARI CONFIG
+   ========================================================= */
+document.getElementById("heroName").textContent = CONFIG.name;
+
+const menuBtn = document.getElementById("menuBtn");
+const menuDropdown = document.getElementById("menuDropdown");
+menuBtn.addEventListener("click", () => {
+  menuBtn.classList.toggle("open");
+  menuDropdown.classList.toggle("open");
+});
+menuDropdown.querySelectorAll("a").forEach(a => {
+  a.addEventListener("click", () => {
+    menuBtn.classList.remove("open");
+    menuDropdown.classList.remove("open");
+  });
+});
+document.addEventListener("click", e => {
+  if (!e.target.closest(".menu-wrap")) {
+    menuBtn.classList.remove("open");
+    menuDropdown.classList.remove("open");
+  }
+});
+document.getElementById("aboutText").textContent = CONFIG.bio;
+
+const certTrack = document.getElementById("certTrack");
+CONFIG.certificates.forEach(src => {
+  const card = document.createElement("div");
+  card.className = "cert-frame";
+  card.innerHTML = `<img src="${src}" alt="Sertifikat penghargaan Farhan Saputra Pratama">`;
+  certTrack.appendChild(card);
+});
+document.getElementById("profilePhoto").src = CONFIG.profilePhoto;
+document.getElementById("year").textContent = new Date().getFullYear();
+
+const socialsWrap = document.getElementById("socialsWrap");
+CONFIG.socials.forEach(s => {
+  const a = document.createElement("a");
+  a.className = "social-card";
+  a.href = s.url;
+  a.target = "_blank";
+  a.rel = "noopener noreferrer";
+  a.innerHTML = `
+    <span class="social-icon" style="background:${s.bg}">${ICONS[s.icon]}</span>
+    <span class="social-meta"><span class="label">${s.label}</span><br><span class="value">${s.value}</span></span>
+  `;
+  socialsWrap.appendChild(a);
+});
+
+const skillsTrack = document.getElementById("skillsTrack");
+CONFIG.skills.forEach(s => {
+  const card = document.createElement("div");
+  card.className = "skill-card";
+  card.innerHTML = `
+    <div class="skill-top">
+      <span class="skill-logo" style="background:${s.color}">${ICONS[s.icon]}</span>
+      <span class="skill-name">${s.name}</span>
+    </div>
+    <div class="skill-pct-row">
+      <span class="skill-pct-label">tingkat penguasaan</span>
+      <span class="skill-pct-num">${s.pct}%</span>
+    </div>
+    <div class="skill-bar"><div class="skill-bar-fill" data-pct="${s.pct}"></div></div>
+    <p class="skill-desc">${s.desc}</p>
+  `;
+  skillsTrack.appendChild(card);
+});
+
+const projectsWrap = document.getElementById("projectsWrap");
+CONFIG.projects.forEach(p => {
+  const card = document.createElement("div");
+  card.className = "project-card";
+  card.innerHTML = `
+    <span class="project-tag">${p.tag}</span>
+    <div class="project-title">${p.title}</div>
+    <p class="project-desc">${p.desc}</p>
+    <ul class="project-list">${p.points.map(pt => `<li>${pt}</li>`).join("")}</ul>
+  `;
+  projectsWrap.appendChild(card);
+});
+
+/* =========================================================
+   SLIDER KEAHLIAN — drag & tombol panah
+   ========================================================= */
+let isDown = false, startX = 0, startScroll = 0;
+skillsTrack.addEventListener("pointerdown", e => {
+  isDown = true;
+  skillsTrack.setPointerCapture(e.pointerId);
+  startX = e.clientX;
+  startScroll = skillsTrack.scrollLeft;
+  skillsTrack.classList.add("dragging");
+});
+skillsTrack.addEventListener("pointermove", e => {
+  if (!isDown) return;
+  skillsTrack.scrollLeft = startScroll - (e.clientX - startX);
+});
+["pointerup", "pointercancel", "pointerleave"].forEach(evt => {
+  skillsTrack.addEventListener(evt, () => { isDown = false; skillsTrack.classList.remove("dragging"); });
+});
+document.getElementById("skillPrev").onclick = () => skillsTrack.scrollBy({ left: -300, behavior: "smooth" });
+document.getElementById("skillNext").onclick = () => skillsTrack.scrollBy({ left: 300, behavior: "smooth" });
+
+const barObserver = new IntersectionObserver(entries => {
+  entries.forEach(en => {
+    if (en.isIntersecting) {
+      en.target.style.width = en.target.dataset.pct + "%";
+      barObserver.unobserve(en.target);
+    }
+  });
+}, { threshold: 0.4 });
+document.querySelectorAll(".skill-bar-fill").forEach(b => barObserver.observe(b));
+
+/* =========================================================
+   REVEAL ON SCROLL
+   ========================================================= */
+const revealObserver = new IntersectionObserver(entries => {
+  entries.forEach(en => { if (en.isIntersecting) en.target.classList.add("show"); });
+}, { threshold: 0.15 });
+document.querySelectorAll(".reveal").forEach(el => revealObserver.observe(el));
+
+/* =========================================================
+   VERIFIKASI GATE
+   ========================================================= */
+const gate = document.getElementById("gate");
+const nameInput = document.getElementById("nameInput");
+const btnLanjut = document.getElementById("btnLanjut");
+const step1 = document.getElementById("step1");
+const step2 = document.getElementById("step2");
+const thanksText = document.getElementById("thanksText");
+const btnMasuk = document.getElementById("btnMasuk");
+
+nameInput.addEventListener("input", () => {
+  btnLanjut.disabled = nameInput.value.trim().length === 0;
+});
+nameInput.addEventListener("keydown", e => {
+  if (e.key === "Enter" && !btnLanjut.disabled) btnLanjut.click();
+});
+
+btnLanjut.addEventListener("click", () => {
+  const visitorName = nameInput.value.trim() || "kamu";
+  thanksText.innerHTML = `Terimakasih sudah memberikan namamu yaa, <b>${visitorName}</b>. Sekarang kamu bisa melihat lebih lanjut ke dalam website portofolio buatan Mas Farhan. See youu👋🏻`;
+  step1.classList.remove("active");
+  step2.classList.add("active");
+});
+
+btnMasuk.addEventListener("click", () => {
+  gate.classList.add("hidden");
+  document.body.classList.remove("locked");
+});
+
+/* =========================================================
+   CANVAS: PARTIKEL PUTIH TERHUBUNG + METEOR JATUH
+   ========================================================= */
+const canvas = document.getElementById("bg-canvas");
+const ctx = canvas.getContext("2d");
+const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+let w, h, particles, meteors;
+
+function resizeCanvas() {
+  w = canvas.width = window.innerWidth;
+  h = canvas.height = window.innerHeight;
+}
+window.addEventListener("resize", () => { resizeCanvas(); initParticles(); });
+resizeCanvas();
+
+function initParticles() {
+  const count = reduceMotion ? 0 : Math.min(85, Math.floor((w * h) / 19000));
+  particles = Array.from({ length: count }, () => ({
+    x: Math.random() * w,
+    y: Math.random() * h,
+    vx: (Math.random() - 0.5) * 0.25,
+    vy: (Math.random() - 0.5) * 0.25,
+    r: Math.random() * 1.3 + 0.6
+  }));
+}
+initParticles();
+
+function makeMeteor(zoneIndex) {
+  const zones = [
+    { yMin: -110, yMax: -20 },          // zona atas
+    { yMin: h * 0.18, yMax: h * 0.46 }, // zona tengah
+    { yMin: h * 0.58, yMax: h * 0.86 }  // zona bawah
+  ];
+  const z = zones[zoneIndex % 3];
+  return {
+    x: Math.random() * w * 0.9 + w * 0.05,
+    y: z.yMin + Math.random() * (z.yMax - z.yMin),
+    len: Math.random() * 110 + 90,
+    speed: Math.random() * 5 + 6,
+    angle: Math.PI / 4 + (Math.random() * 0.2 - 0.1),
+    delay: Math.random() * 500,
+    zoneIndex
+  };
+}
+meteors = reduceMotion ? [] : Array.from({ length: 9 }, (_, i) => makeMeteor(i));
+
+function drawParticles() {
+  ctx.fillStyle = "rgba(255,255,255,0.8)";
+  for (const p of particles) {
+    p.x += p.vx; p.y += p.vy;
+    if (p.x < 0) p.x = w; if (p.x > w) p.x = 0;
+    if (p.y < 0) p.y = h; if (p.y > h) p.y = 0;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  const maxDist = 125;
+  for (let i = 0; i < particles.length; i++) {
+    for (let j = i + 1; j < particles.length; j++) {
+      const a = particles[i], b = particles[j];
+      const dx = a.x - b.x, dy = a.y - b.y;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      if (dist < maxDist) {
+        ctx.strokeStyle = `rgba(255,255,255,${(1 - dist / maxDist) * 0.16})`;
+        ctx.lineWidth = 0.6;
+        ctx.beginPath();
+        ctx.moveTo(a.x, a.y);
+        ctx.lineTo(b.x, b.y);
+        ctx.stroke();
+      }
+    }
+  }
+}
+
+function drawMeteors() {
+  for (const m of meteors) {
+    if (m.delay > 0) { m.delay--; continue; }
+    m.x += Math.cos(m.angle) * m.speed;
+    m.y += Math.sin(m.angle) * m.speed;
+    const tailX = m.x - Math.cos(m.angle) * m.len;
+    const tailY = m.y - Math.sin(m.angle) * m.len;
+    const grad = ctx.createLinearGradient(m.x, m.y, tailX, tailY);
+    grad.addColorStop(0, "rgba(255,255,255,0.95)");
+    grad.addColorStop(1, "rgba(255,255,255,0)");
+    ctx.strokeStyle = grad;
+    ctx.lineWidth = 1.6;
+    ctx.beginPath();
+    ctx.moveTo(m.x, m.y);
+    ctx.lineTo(tailX, tailY);
+    ctx.stroke();
+    if (m.y > h + 120 || m.x > w + 120) {
+      Object.assign(m, makeMeteor(m.zoneIndex), { delay: Math.random() * 500 + 250 });
+    }
+  }
+}
+
+function loop() {
+  ctx.clearRect(0, 0, w, h);
+  drawParticles();
+  drawMeteors();
+  requestAnimationFrame(loop);
+}
+loop();
+</script>
+</body>
+</html>
